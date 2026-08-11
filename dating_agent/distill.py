@@ -31,9 +31,17 @@ class Distiller:
             PersonalityProfile
         """
         # 构建对话文本
+        max_logs = 100
+        if len(chat_logs) > max_logs:
+            import warnings
+            warnings.warn(
+                f"聊天记录共{len(chat_logs)}条，仅取前{max_logs}条进行分析，"
+                f"后{len(chat_logs) - max_logs}条被截断。",
+                stacklevel=2,
+            )
         conv_text = "\n".join(
             f"{'我' if log.get('role') == 'me' else '对方'}: {log['content']}"
-            for log in chat_logs[:100]  # 最多取100条防超长
+            for log in chat_logs[:max_logs]  # 最多取100条防超长
         )
 
         messages = [

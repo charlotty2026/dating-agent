@@ -3,8 +3,12 @@ LLM客户端 - 统一接口，支持OpenAI/DeepSeek/火山引擎等兼容API
 """
 
 import os
+import time
+import logging
 from typing import Optional
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -45,6 +49,13 @@ class LLMClient:
         self.config = config
         self._client = None
 
+        # P1-5: API key 空值校验
+        if not self.config.api_key:
+            raise ValueError(
+                "LLM API key 为空！请设置环境变量 LLM_API_KEY 或在 config.yaml 中配置 api_key。\n"
+                "示例: export LLM_API_KEY='sk-xxxx'"
+            )
+
     @property
     def client(self):
         """懒加载openai客户端"""
@@ -63,7 +74,7 @@ class LLMClient:
 
     def chat(self, messages: list, **kwargs) -> str:
         """
-        调用LLM对话
+        调用LLM对话（含速率控制+自动重试）
 
         Args:
             messages: [{"role": "system/user/assistant", "content": "..."}]
@@ -79,8 +90,25 @@ class LLMClient:
             "max_tokens": kwargs.get("max_tokens", self.config.max_tokens),
         }
 
-        response = self.client.chat.completions.create(**params)
-        return response.choices[0].message.content
+        max_retries = 2
+        retry_delay = 3  # 秒
+
+        for attempt in range(max_retries + 1):
+            try:
+                response = self.client.chat.completions.create(**params)
+                # 速率控制：每次成功调用后短暂等待，防止密集请求触发429
+                time.sleep(0.5)
+                return response.choices[0].message.content
+            except Exception as e:
+                if attempt < max_retries:
+                    logger.warning(
+                        f"LLM调用失败 (第{attempt+1}次), {retry_delay}秒后重试... 错误: {e}"
+                    )
+                    time.sleep(retry_delay)
+                else:
+                    raise RuntimeError(
+                        f"LLM调用连续失败{max_retries+1}次，最后错误: {e}"
+                    ) from e
 
     def chat_json(self, messages: list, **kwargs) -> dict:
         """

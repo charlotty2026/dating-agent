@@ -43,7 +43,6 @@ class FilterEngine:
         reasons = []
 
         # 检查硬性门槛
-        bio_lower = bio.lower()
         for db in self.profile.dealbreakers:
             if db in bio or db in photo_description:
                 return {

@@ -21,13 +21,17 @@ class ChatEngine:
     - 无LLM: 仿真模式，用于测试流程
     """
 
-    # 评估阈值
-    MEET_THRESHOLD = 70      # 分数>=70 建议约见面
-    DROP_THRESHOLD = 30      # 分数<30 建议放弃
-
-    def __init__(self, profile: PersonalityProfile, llm: Optional[LLMClient] = None):
+    def __init__(self, profile: PersonalityProfile, llm: Optional[LLMClient] = None,
+                 meet_threshold: int = 70, drop_threshold: int = 30):
+        """
+        Args:
+            meet_threshold: 分数>=此值建议约见面
+            drop_threshold: 分数<此值建议放弃
+        """
         self.profile = profile
         self.llm = llm
+        self.meet_threshold = meet_threshold
+        self.drop_threshold = drop_threshold
         self.conversations = {}  # match_id -> [{"role": "...", "content": "..."}]
 
     def get_history(self, match_id: str) -> list:
@@ -204,7 +208,7 @@ class ChatEngine:
         avg_len = sum(len(m) for m in their_msgs) // max(len(their_msgs), 1)
         return {
             "score": score,
-            "should_meet": score >= self.MEET_THRESHOLD,
-            "should_drop": score < self.DROP_THRESHOLD,
+            "should_meet": score >= self.meet_threshold,
+            "should_drop": score < self.drop_threshold,
             "reason": f"规则评估: {len(conv)}条消息, 对方均长{avg_len}",
         }

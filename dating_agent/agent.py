@@ -3,6 +3,7 @@
 """
 
 import json
+import uuid
 from typing import Optional
 from .llm_client import LLMClient, LLMConfig
 from .profile import PersonalityProfile
@@ -94,7 +95,7 @@ class DatingAgent:
                   f"(每人对聊{rounds}轮)\n")
 
         for match in self.matches:
-            match_id = str(match.get("id", id(match)))
+            match_id = str(match.get("id", str(uuid.uuid4())))
             name = match.get("name", "匿名")
 
             if verbose:

@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "dating-agent"
+version = "0.1.0"
+description = "AI辅助相亲筛选Agent - 用LLM帮你初筛、聊天、评估匹配度"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "charlotty2026"},
+]
+keywords = ["dating", "agent", "llm", "ai", "matching"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "openai>=1.0.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/charlotty2026/dating-agent"
+Repository = "https://github.com/charlotty2026/dating-agent"
+Issues = "https://github.com/charlotty2026/dating-agent/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dating_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

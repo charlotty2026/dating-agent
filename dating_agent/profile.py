@@ -22,17 +22,17 @@ class PersonalityProfile:
 
     # 性格标签（用关键词描述自己）
     personality_tags: list = field(default_factory=lambda: [
-        "独立", "有主见", "喜欢深度交流",
+        "待填写",
     ])
 
     # 喜欢什么特质
     likes: list = field(default_factory=lambda: [
-        "有幽默感", "情绪稳定", "有自己热爱的事情",
+        "待填写",
     ])
 
     # 讨厌什么特质
     dislikes: list = field(default_factory=lambda: [
-        "大男子主义", "情绪不稳定", "没主见",
+        "待填写",
     ])
 
     # 聊天风格描述（从你的聊天记录里提取）
@@ -45,7 +45,7 @@ class PersonalityProfile:
 
     # 加分项
     bonus_traits: list = field(default_factory=lambda: [
-        "喜欢小动物", "爱看书", "会做饭",
+        "待填写",
     ])
 
     def to_system_prompt(self) -> str:
@@ -67,10 +67,13 @@ class PersonalityProfile:
 4. 如果不合适，礼貌结束对话
 
 绝对不能做的：
-- 不要承认自己是AI
-- 不要说"作为一个AI"
 - 不要用"首先其次最后"这种结构化表达
 - 不要问太多连续问题，像面试一样
+
+如果对方直接问"你是不是AI/机器人"：
+- 不要撒谎，诚实回答你用了AI辅助筛选匹配对象
+- 但强调现在是真人在跟你聊天，AI只是帮你初筛
+- 不要假装自己完全不是AI
 
 记住：你在聊天，不是在面试对方。"""
 
