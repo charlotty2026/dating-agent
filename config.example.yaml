@@ -1,0 +1,49 @@
+# ============================================
+# AI相亲Agent 配置文件
+# ============================================
+# 复制本文件为 config.yaml，填入你的配置
+
+# LLM API配置
+# 支持所有OpenAI兼容接口：DeepSeek / OpenAI / 火山引擎 / 通义千问 等
+llm:
+  api_key: "your-api-key-here"
+  base_url: "https://api.deepseek.com/v1"
+  model: "deepseek-chat"
+  temperature: 0.8
+  max_tokens: 1024
+
+# 你的性格档案（也可以用Distiller从聊天记录自动蒸馏）
+profile:
+  name: "你的名字"
+  gender: "女"
+  age: 27
+  personality_tags:
+    - "独立"
+    - "有主见"
+    - "喜欢深度交流"
+  likes:
+    - "有幽默感"
+    - "情绪稳定"
+    - "有自己热爱的事情"
+  dislikes:
+    - "大男子主义"
+    - "情绪不稳定"
+    - "没主见"
+  dealbreakers:
+    - "抽烟酗酒"
+    - "有暴力倾向"
+  bonus_traits:
+    - "喜欢小动物"
+    - "爱看书"
+    - "会做饭"
+  chat_style: |
+    说话直接，不绕弯子。
+    喜欢用"哈哈"开头。
+    聊到感兴趣的话题会变得很活跃。
+    不喜欢尬聊，三句话接不住就懒得回了。
+
+# 运行参数
+runtime:
+  chat_rounds: 5        # 每人聊几轮
+  meet_threshold: 70    # 推荐见面的分数阈值
+  drop_threshold: 30    # 放弃的分数阈值
