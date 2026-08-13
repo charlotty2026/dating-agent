@@ -111,13 +111,27 @@ class ChatEngine:
 
     def _reply_simulated(self, their_message: str) -> str:
         """仿真回复（无API时用）"""
+        import random
+
+        # 敷衍检测
         if len(their_message) < 5:
-            return "嗯嗯"
+            return random.choice(["嗯嗯", "哈哈", "哦哦"])
 
+        # 主动提问 = 好信号
         if "?" in their_message or "？" in their_message:
-            return "哈哈这个问题问得好，我觉得……你呢？"
+            return random.choice([
+                "哈哈这个问题问得好，我觉得……你呢？",
+                "嗯，我也觉得这样挺好的。你还有其他想法吗？",
+                "有意思，展开说说？",
+            ])
 
-        return "哈哈，有意思，继续说？"
+        # 普通陈述
+        return random.choice([
+            "哈哈，有意思，继续说？",
+            "真的吗？那你怎么看？",
+            "嗯嗯，我也这么觉得。",
+            "哈哈你挺有意思的，",
+        ])
 
     def evaluate(self, match_id: str) -> dict:
         """
