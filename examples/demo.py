@@ -5,6 +5,7 @@ Demo - 蒸馏自己+筛选+聊天的完整流程
 - 仿真模式只支持筛选，不支持聊天
 - 聊天必须接LLM API
 - 蒸馏必须接LLM API
+- 新增安全防护：速率限制+内容过滤+人格持久化
 """
 
 from dating_agent import DatingAgent, PersonalityProfile
@@ -13,7 +14,7 @@ from dating_agent.llm_client import LLMClient, LLMConfig
 
 def main():
     # ========================================
-    # 方案A：仿真模式（只筛选，不聊天）
+    # 方案A：仿真模式（只筛选）
     # ========================================
     print("=== 方案A：仿真模式（只筛选） ===\n")
 
@@ -92,11 +93,20 @@ def main():
     print(f"   喜欢: {', '.join(profile.likes)}")
     print(f"   讨厌: {', '.join(profile.dislikes)}\n")
 
+    # 保存性格档案
+    saved_path = agent.persistence.save(profile)
+    print(f"💾 性格档案已保存: {saved_path}\n")
+
     # 用蒸馏出的档案创建新Agent
     agent2 = DatingAgent(profile, llm=llm)
     agent2.swipe(sample_profiles)
     agent2.chat_with_matches(rounds=3)
     agent2.report()
+
+    # 列出已保存的性格档案
+    print("\n📋 已保存的性格档案:")
+    for p in agent2.persistence.list_profiles():
+        print(f"  - {p['filename']} ({p['name']})")
 
 
 if __name__ == "__main__":

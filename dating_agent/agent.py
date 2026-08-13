@@ -22,6 +22,9 @@ from .profile import PersonalityProfile
 from .filter_engine import FilterEngine
 from .chat_engine import ChatEngine
 from .distill import Distiller
+from .rate_limiter import RateLimiter
+from .content_safety import ContentSafety
+from .profile_persistence import ProfilePersistence
 
 
 class DatingAgent:
@@ -33,6 +36,11 @@ class DatingAgent:
     2. 智能筛选：按性格档案判断要不要右滑
     3. 自动聊天：接LLM API，自然对话
     4. 对话评估：聊完打分，推荐见面/继续聊/放弃
+
+    安全防护：
+    - 速率限制：防止短时间大量发送
+    - 内容安全：过滤危险内容
+    - 人格持久化：保存和加载性格档案
     """
 
     def __init__(self, profile: PersonalityProfile,
@@ -42,6 +50,9 @@ class DatingAgent:
         self.filter_engine = FilterEngine(profile, llm)
         self.chat_engine = ChatEngine(profile, llm)
         self.distiller = Distiller(llm) if llm else None
+        self.rate_limiter = RateLimiter(min_interval=2.0)
+        self.content_safety = ContentSafety(enabled=True)
+        self.persistence = ProfilePersistence()
         self.matches = []       # 初筛通过
         self.shortlisted = []   # 聊天后推荐见面
         self.dropped = []       # 聊天后放弃
@@ -160,7 +171,19 @@ class DatingAgent:
                 if verbose:
                     print(f"  👤 对方: {their_reply}")
 
+                # 速率限制
+                self.rate_limiter.wait_if_needed()
+
+                # 生成回复
                 ai_reply = self.chat_engine.reply(match_id, their_reply)
+
+                # 内容安全过滤
+                is_safe, reason = self.content_safety.check(ai_reply)
+                if not is_safe:
+                    ai_reply = "抱歉，这个话题不太合适，我们换个话题聊聊？"
+                    if verbose:
+                        print(f"  ⚠️ 内容被过滤: {reason}")
+
                 if verbose:
                     print(f"  🤖 你: {ai_reply}")
 

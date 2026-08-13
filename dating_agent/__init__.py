@@ -7,7 +7,7 @@ from .filter_engine import FilterEngine
 from .chat_engine import ChatEngine
 from .distill import Distiller
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "风林火山门"
 __all__ = [
     "DatingAgent",
@@ -17,4 +17,7 @@ __all__ = [
     "FilterEngine",
     "ChatEngine",
     "Distiller",
+    "RateLimiter",
+    "ContentSafety",
+    "ProfilePersistence",
 ]
