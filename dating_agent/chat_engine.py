@@ -53,6 +53,9 @@ class ChatEngine:
             "content": their_message,
         })
 
+        # 限制对话历史长度（保留最近50条，防止内存泄漏）
+        self.conversations[match_id] = self.conversations[match_id][-50:]
+
         # 必须有LLM才能聊天
         if not self.llm:
             raise ValueError(

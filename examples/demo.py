@@ -10,6 +10,7 @@ Demo - 蒸馏自己+筛选+聊天的完整流程
 
 from dating_agent import DatingAgent, PersonalityProfile
 from dating_agent.llm_client import LLMClient, LLMConfig
+from dating_agent.distill import Distiller
 
 
 def main():
@@ -86,7 +87,8 @@ def main():
 
     # 蒸馏
     print("🧪 正在蒸馏性格档案...")
-    distiller = agent.distiller
+    # agent.distiller是None（创建时没传llm），需要新建distiller
+    distiller = Distiller(llm)
     profile = distiller.distill(sample_chat_logs, basic_info)
     print(f"✅ 蒸馏完成！")
     print(f"   性格标签: {', '.join(profile.personality_tags)}")
@@ -94,7 +96,8 @@ def main():
     print(f"   讨厌: {', '.join(profile.dislikes)}\n")
 
     # 保存性格档案
-    saved_path = agent.persistence.save(profile)
+    agent2 = DatingAgent(profile, llm=llm)
+    saved_path = agent2.persistence.save(profile)
     print(f"💾 性格档案已保存: {saved_path}\n")
 
     # 用蒸馏出的档案创建新Agent

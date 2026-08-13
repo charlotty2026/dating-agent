@@ -96,8 +96,6 @@ class LLMClient:
         for attempt in range(max_retries + 1):
             try:
                 response = self.client.chat.completions.create(**params)
-                # 速率控制：每次成功调用后短暂等待，防止密集请求触发429
-                time.sleep(0.5)
                 return response.choices[0].message.content
             except Exception as e:
                 if attempt < max_retries:

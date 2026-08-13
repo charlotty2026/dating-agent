@@ -123,7 +123,10 @@ dating-agent/
 │   ├── filter_engine.py   # 筛选引擎（规则+LLM双模式）
 │   ├── chat_engine.py     # 聊天引擎（Agent循环）
 │   ├── distill.py         # 蒸馏自己（聊天记录→性格档案）
-│   └── agent.py           # 主控Agent
+│   ├── agent.py           # 主控Agent
+│   ├── content_safety.py  # 内容安全过滤器
+│   ├── rate_limiter.py    # 速率限制器
+│   └── profile_persistence.py  # 性格档案持久化
 ├── examples/
 │   └── demo.py            # 示例（仿真+LLM两种模式）
 ├── config.example.yaml    # 配置模板

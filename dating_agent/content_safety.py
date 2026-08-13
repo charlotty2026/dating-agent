@@ -29,13 +29,25 @@ class ContentSafety:
 
     def __init__(self, enabled: bool = True):
         self.enabled = enabled
-        self.compiled_patterns = [
-            re.compile(p, re.IGNORECASE) for p in DANGEROUS_PATTERNS
-        ]
+        # 危险关键词（需要组合上下文判断，避免误杀）
+        self.dangerous_keywords = {
+            "骗": ["钱", "财", "款", "物", "钱"],
+            "杀": ["死", "你", "了", "掉", "人"],
+            "伤害": ["自己", "他人"],
+            "自杀": [],  # 单独成词
+            "自残": [],
+            "暴力": [],
+            "威胁": ["你", "对方"],
+            "恐吓": [],
+            "色情": ["内容", "信息"],
+            "裸照": [],
+            "约炮": [],
+            "一夜情": [],
+        }
 
     def check(self, text: str) -> tuple[bool, str]:
         """
-        检查文本是否安全
+        检查文本是否安全（考虑上下文，避免误杀）
 
         Returns:
             (is_safe, reason)
@@ -43,9 +55,24 @@ class ContentSafety:
         if not self.enabled:
             return True, ""
 
-        for pattern in self.compiled_patterns:
-            if pattern.search(text):
-                return False, f"检测到危险内容: {pattern.pattern}"
+        # 检查否定语境
+        has_negation = any(neg in text for neg in ["不", "没", "无", "未", "反对", "禁止"])
+
+        for keyword, follow_ups in self.dangerous_keywords.items():
+            if keyword in text:
+                # 如果有否定词，且危险词前面有否定，不算危险
+                if has_negation and keyword in text[:text.find(keyword) + 10]:
+                    continue
+
+                # 如果有后续词，才认为是危险
+                if follow_ups:
+                    for fu in follow_ups:
+                        if fu in text:
+                            return False, f"检测到危险内容: {keyword}{fu}"
+                else:
+                    # 单独成词的危险词
+                    if keyword in ["暴力", "自杀", "自残", "恐吓", "裸照", "约炮", "一夜情"]:
+                        return False, f"检测到危险内容: {keyword}"
 
         return True, ""
 

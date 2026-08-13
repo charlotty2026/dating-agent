@@ -42,9 +42,18 @@ class FilterEngine:
         score = 50
         reasons = []
 
-        # 检查硬性门槛
+        # 检查硬性门槛（考虑否定词）
         for db in self.profile.dealbreakers:
+            # 提取关键词（去掉"不"/"没"等否定前缀）
+            db_clean = db.lstrip("不没无未")
+            # 检查是否命中dealbreaker（排除否定句）
             if db in bio or db in photo_description:
+                # 检查否定词：如果前后5字符内有"不"/"没"，不算命中
+                idx = bio.find(db) if db in bio else photo_description.find(db)
+                if idx >= 0:
+                    context = bio[max(0, idx-5):idx+len(db)+5] if db in bio else photo_description[max(0, idx-5):idx+len(db)+5]
+                    if any(neg in context for neg in ["不", "没", "无", "未"]):
+                        continue  # 否定句，跳过
                 return {
                     "should_swipe_right": False,
                     "score": 0,
