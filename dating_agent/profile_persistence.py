@@ -27,7 +27,6 @@ class ProfilePersistence:
         Returns:
             保存路径
         """
-        import time  # 移到分支外，避免调用时NameError
         if filename is None:
             filename = f"{profile.name}_{int(time.time())}.json"
 

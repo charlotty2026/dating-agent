@@ -2,26 +2,7 @@
 内容安全过滤器 - 过滤危险内容
 """
 
-import re
 from typing import Optional
-
-
-# 危险词汇列表（可扩展）
-DANGEROUS_PATTERNS = [
-    r"骗.*钱",
-    r"骗.*财",
-    r"杀.*人",
-    r"伤害.*自己",
-    r"自杀",
-    r"自残",
-    r"暴力",
-    r"威胁",
-    r"恐吓",
-    r"色情.*内容",
-    r"裸照",
-    r"约炮",
-    r"一夜情",
-]
 
 
 class ContentSafety:
@@ -55,14 +36,25 @@ class ContentSafety:
         if not self.enabled:
             return True, ""
 
-        # 检查否定语境
-        has_negation = any(neg in text for neg in ["不", "没", "无", "未", "反对", "禁止"])
+        # 否定词列表
+        negations = ["不", "没", "无", "未", "反对", "禁止"]
 
         for keyword, follow_ups in self.dangerous_keywords.items():
-            if keyword in text:
-                # 如果有否定词，且危险词前面有否定，不算危险
-                if has_negation and keyword in text[:text.find(keyword) + 10]:
-                    continue
+            if keyword not in text:
+                continue
+
+            # 找到所有keyword出现的位置，逐一检查
+            start = 0
+            while True:
+                idx = text.find(keyword, start)
+                if idx == -1:
+                    break
+
+                # 检查关键词前10个字符内是否有否定词
+                prefix = text[max(0, idx - 10):idx]
+                if any(neg in prefix for neg in negations):
+                    start = idx + len(keyword)
+                    continue  # 否定语境，跳过这个位置
 
                 # 如果有后续词，才认为是危险
                 if follow_ups:
@@ -73,6 +65,8 @@ class ContentSafety:
                     # 单独成词的危险词
                     if keyword in ["暴力", "自杀", "自残", "恐吓", "裸照", "约炮", "一夜情"]:
                         return False, f"检测到危险内容: {keyword}"
+
+                start = idx + len(keyword)
 
         return True, ""
 

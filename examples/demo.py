@@ -95,13 +95,12 @@ def main():
     print(f"   喜欢: {', '.join(profile.likes)}")
     print(f"   讨厌: {', '.join(profile.dislikes)}\n")
 
-    # 保存性格档案
+    # 保存性格档案 + 用蒸馏出的档案创建Agent
     agent2 = DatingAgent(profile, llm=llm)
     saved_path = agent2.persistence.save(profile)
     print(f"💾 性格档案已保存: {saved_path}\n")
 
-    # 用蒸馏出的档案创建新Agent
-    agent2 = DatingAgent(profile, llm=llm)
+    # 筛选+聊天+出报告
     agent2.swipe(sample_profiles)
     agent2.chat_with_matches(rounds=3)
     agent2.report()
