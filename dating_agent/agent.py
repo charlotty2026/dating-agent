@@ -1,5 +1,17 @@
 """
-主控Agent - 串联筛选+聊天+评估的完整流程
+主控Agent - 串联蒸馏+筛选+聊天的完整流程
+
+使用流程：
+1. 准备聊天记录（从交友平台导出）
+2. 用Distiller蒸馏出性格档案
+3. 创建Agent
+4. 喂profile列表，Agent自动筛选
+5. 筛选通过的，Agent自动聊天
+6. 聊得好的，推给你真人接管
+
+⚠️ 伦理声明：
+本项目用于"AI帮你初筛"，不建议AI伪装成你进行深度情感交流。
+建议在合适时机向对方坦白使用了AI辅助筛选。
 """
 
 import json
@@ -9,22 +21,18 @@ from .llm_client import LLMClient, LLMConfig
 from .profile import PersonalityProfile
 from .filter_engine import FilterEngine
 from .chat_engine import ChatEngine
+from .distill import Distiller
 
 
 class DatingAgent:
     """
     相亲Agent - 主控
 
-    使用流程：
-    1. 创建你的性格档案（手动填 or 用Distiller从聊天记录蒸馏）
-    2. 创建Agent
-    3. 喂profile列表，Agent自动筛选
-    4. 筛选通过的，Agent自动聊天
-    5. 聊得好的，推给你真人接管
-
-    ⚠️ 伦理声明：
-    本项目用于"AI帮你初筛"，不建议AI伪装成你进行深度情感交流。
-    建议在合适时机向对方坦白使用了AI辅助筛选。
+    核心能力：
+    1. 蒸馏自己：聊天记录→性格档案（长期记忆）
+    2. 智能筛选：按性格档案判断要不要右滑
+    3. 自动聊天：接LLM API，自然对话
+    4. 对话评估：聊完打分，推荐见面/继续聊/放弃
     """
 
     def __init__(self, profile: PersonalityProfile,
@@ -33,9 +41,40 @@ class DatingAgent:
         self.llm = llm
         self.filter_engine = FilterEngine(profile, llm)
         self.chat_engine = ChatEngine(profile, llm)
+        self.distiller = Distiller(llm) if llm else None
         self.matches = []       # 初筛通过
         self.shortlisted = []   # 聊天后推荐见面
         self.dropped = []       # 聊天后放弃
+
+    @classmethod
+    def from_chat_logs(cls, chat_logs: list, basic_info: dict,
+                       llm: Optional[LLMClient] = None) -> "DatingAgent":
+        """
+        从聊天记录直接创建Agent（蒸馏+初始化一步到位）
+
+        Args:
+            chat_logs: 你的聊天记录
+            basic_info: {"name": "...", "gender": "...", "age": 27}
+            llm: LLM客户端
+
+        Returns:
+            DatingAgent
+        """
+        if not llm:
+            raise ValueError("蒸馏功能需要LLM API！")
+
+        print(f"🧪 正在蒸馏你的性格档案...")
+        profile = cls._distill_profile(llm, chat_logs, basic_info)
+        print(f"✅ 蒸馏完成！性格标签: {', '.join(profile.personality_tags[:5])}")
+
+        return cls(profile, llm)
+
+    @staticmethod
+    def _distill_profile(llm: LLMClient, chat_logs: list,
+                         basic_info: dict) -> PersonalityProfile:
+        """内部方法：蒸馏性格档案"""
+        distiller = Distiller(llm)
+        return distiller.distill(chat_logs, basic_info)
 
     def swipe(self, profiles: list[dict], verbose: bool = True) -> list:
         """
@@ -89,10 +128,15 @@ class DatingAgent:
         Returns:
             推荐见面的候选人列表
         """
+        if not self.llm:
+            print("⚠️ 聊天功能需要接LLM API！")
+            print("请设置环境变量后重试：")
+            print("  export LLM_API_KEY='your-key'")
+            print("  export LLM_BASE_URL='https://api.deepseek.com/v1'")
+            return []
+
         if verbose:
-            mode = "LLM" if self.llm else "仿真"
-            print(f"\n💬 AI开始自动聊天 [{mode}模式] "
-                  f"(每人对聊{rounds}轮)\n")
+            print(f"\n💬 AI开始自动聊天 [LLM模式] (每人对聊{rounds}轮)\n")
 
         for match in self.matches:
             match_id = str(match.get("id", str(uuid.uuid4())))

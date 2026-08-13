@@ -1,9 +1,10 @@
 """
-蒸馏自己 - 从你的聊天记录提取你的说话风格
+蒸馏自己 - 从你的聊天记录提取你的性格档案
 
-这是整个项目最核心的"魔法"：
+这是整个项目的核心"魔法"：
 你不写prompt，你把自己的聊天记录丢进去，
-AI帮你提取出你的说话方式，生成专属system prompt。
+AI帮你提取出你的说话方式、择偶偏好、硬性门槛，
+生成一份专属的PersonalityProfile，作为Agent的长期记忆。
 """
 
 from typing import Optional
@@ -41,7 +42,7 @@ class Distiller:
             )
         conv_text = "\n".join(
             f"{'我' if log.get('role') == 'me' else '对方'}: {log['content']}"
-            for log in chat_logs[:max_logs]  # 最多取100条防超长
+            for log in chat_logs[:max_logs]
         )
 
         messages = [
@@ -59,9 +60,11 @@ class Distiller:
 }
 
 注意：
-- 标签要具体，不要泛泛的"善良""温柔"
+- 标签要具体，不要泛泛的'善良''温柔'
 - chat_style要描述具体的说话习惯（句式/用词/节奏）
-- 从聊天内容推断对方的偏好，不只是字面意思"""},
+- 从聊天内容推断对方的偏好，不只是字面意思
+- dealbreakers要写死的一票否决项
+- bonus_traits是加分项，不是必须的"""},
             {"role": "user", "content": f"我的基本信息: {basic_info}\n\n我的聊天记录:\n{conv_text}"},
         ]
 

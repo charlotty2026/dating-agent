@@ -1,28 +1,33 @@
 """
-Demo - 不需要API key也能跑的仿真模式
+Demo - 蒸馏自己+筛选+聊天的完整流程
+
+注意：
+- 仿真模式只支持筛选，不支持聊天
+- 聊天必须接LLM API
+- 蒸馏必须接LLM API
 """
 
-from dating_agent import DatingAgent
-from dating_agent.profile import PersonalityProfile
+from dating_agent import DatingAgent, PersonalityProfile
+from dating_agent.llm_client import LLMClient, LLMConfig
 
 
 def main():
-    # 1. 创建性格档案（你也可以用Distiller从聊天记录蒸馏）
+    # ========================================
+    # 方案A：仿真模式（只筛选，不聊天）
+    # ========================================
+    print("=== 方案A：仿真模式（只筛选） ===\n")
+
     my_profile = PersonalityProfile(
         name="示例用户",
         gender="女",
         age=27,
-        personality_tags=[
-            "独立", "有主见", "喜欢深度交流",
-            "文学审美在线", "务实", "有创业精神",
-        ],
-        likes=["有幽默感", "情绪稳定", "有自己热爱的事情", "能接住梗"],
-        dislikes=["大男子主义", "没文化装文化", "情绪不稳定", "整天打游戏"],
+        personality_tags=["独立", "有主见", "喜欢深度交流"],
+        likes=["有幽默感", "情绪稳定", "有自己热爱的事情"],
+        dislikes=["大男子主义", "没文化装文化", "情绪不稳定"],
         dealbreakers=["抽烟酗酒", "有暴力倾向"],
-        bonus_traits=["喜欢小动物", "爱看书", "会做饭", "爱旅行"],
+        bonus_traits=["喜欢小动物", "爱看书", "会做饭"],
     )
 
-    # 2. 模拟一些profile（真实场景从交友平台API获取）
     sample_profiles = [
         {
             "id": "1001",
@@ -45,48 +50,53 @@ def main():
                 "感觉跟你聊天挺开心的，要不要出来喝杯咖啡？",
             ],
         },
-        {
-            "id": "1003",
-            "name": "大刘",
-            "bio": "创业中，喜欢哲学和深度对话，会做饭",
-            "interests": ["哲学", "创业", "读书", "做饭"],
-            "photo_description": "咖啡厅工作照",
-            "simulated_replies": [
-                "你好！看到你的简介觉得挺有意思的",
-                "你觉得一个人最重要的品质是什么？",
-                "我也喜欢深度交流，表面聊天太无聊了",
-                "周末喜欢自己做饭研究菜谱，你呢？",
-                "聊了这么多感觉挺投缘的，有空出来聊聊？",
-            ],
-        },
-        {
-            "id": "1004",
-            "name": "王总",
-            "bio": "事业有成，就想找个听话的，抽烟喝酒应酬多",
-            "interests": ["车", "表", "高尔夫"],
-            "photo_description": "车里自拍，手上有烟",
-        },
     ]
 
-    # 3. 启动Agent（无API = 仿真模式，有API = 真LLM模式）
-    # 要用真LLM：
-    #   from dating_agent.llm_client import LLMClient, LLMConfig
-    #   llm = LLMClient(LLMConfig.from_env())
-    #   agent = DatingAgent(my_profile, llm=llm)
-
-    agent = DatingAgent(my_profile)  # 仿真模式
-
-    # 4. 筛选
+    agent = DatingAgent(my_profile)  # 无API = 规则模式
     agent.swipe(sample_profiles)
 
-    # 5. 聊天
-    agent.chat_with_matches(rounds=5)
+    # ========================================
+    # 方案B：LLM模式（蒸馏+筛选+聊天）
+    # ========================================
+    print("\n\n=== 方案B：LLM模式（蒸馏+筛选+聊天） ===\n")
+    print("⚠️ 本方案需要LLM API，请先设置环境变量：")
+    print("  export LLM_API_KEY='your-key'")
+    print("  export LLM_BASE_URL='https://api.deepseek.com/v1'")
+    print("  export LLM_MODEL='deepseek-chat'\n")
 
-    # 6. 出报告
-    agent.report()
+    try:
+        llm = LLMClient(LLMConfig.from_env())
+        print(f"✅ LLM连接成功: {llm.config.model}")
+    except Exception as e:
+        print(f"❌ LLM连接失败: {e}")
+        print("跳过方案B，直接退出")
+        return
 
-    # 7. 保存结果
-    agent.save_results("results.json")
+    # 示例聊天记录（真实场景从交友平台导出）
+    sample_chat_logs = [
+        {"role": "me", "content": "哈哈哈哈你也喜欢这个啊"},
+        {"role": "them", "content": "对啊，我也觉得超有意思的"},
+        {"role": "me", "content": "那你平时还喜欢干嘛"},
+        {"role": "them", "content": "看书旅行，你呢"},
+        {"role": "me", "content": "我啊，看书发呆撸猫，三件套"},
+    ]
+
+    basic_info = {"name": "示例用户", "gender": "女", "age": 27}
+
+    # 蒸馏
+    print("🧪 正在蒸馏性格档案...")
+    distiller = agent.distiller
+    profile = distiller.distill(sample_chat_logs, basic_info)
+    print(f"✅ 蒸馏完成！")
+    print(f"   性格标签: {', '.join(profile.personality_tags)}")
+    print(f"   喜欢: {', '.join(profile.likes)}")
+    print(f"   讨厌: {', '.join(profile.dislikes)}\n")
+
+    # 用蒸馏出的档案创建新Agent
+    agent2 = DatingAgent(profile, llm=llm)
+    agent2.swipe(sample_profiles)
+    agent2.chat_with_matches(rounds=3)
+    agent2.report()
 
 
 if __name__ == "__main__":
