@@ -18,7 +18,15 @@
 - **智能筛选**：用 LLM 做语义判断（不是关键词匹配），决定要不要右滑
 - **自动聊天**：接真 LLM API，自然对话，不是预设模板
 - **对话评估**：聊完自动打分，推荐见面 / 继续聊 / 放弃
-- **双模式**：有 API key 用真 LLM，没有就用规则引擎仿真
+- **双模式**：仿真模式只筛选，LLM模式全功能
+
+## 架构变化（v0.2.0）
+
+**蒸馏自己是核心**——聊天记录→性格档案（长期记忆），不是临时生成回复。
+
+**仿真模式降级**——只保留筛选功能，聊天必须接LLM API。
+
+**聊天引擎改成Agent循环**——感知（记录消息）→ 思考（结合记忆生成回复）→ 行动（回复）→ 记忆（存入历史）。
 
 ## 快速开始
 
@@ -30,35 +38,66 @@ cd dating-agent
 pip install -r requirements.txt
 ```
 
-### 仿真模式（不需要 API key）
+### 仿真模式（只筛选，不需要 API key）
 
 ```bash
 python examples/demo.py
 ```
 
-### LLM 模式（接真 API）
+输出：
+- 左滑/右滑判断
+- 评分和理由
+- 筛选结果统计
+
+### LLM模式（蒸馏+筛选+聊天）
 
 ```bash
-# 1. 复制配置文件
-cp config.example.yaml config.yaml
-
-# 2. 填入你的 API key（支持 DeepSeek / OpenAI / 火山引擎等）
-# 编辑 config.yaml
-
-# 3. 设置环境变量
+# 1. 设置环境变量
 export LLM_API_KEY="your-key"
 export LLM_BASE_URL="https://api.deepseek.com/v1"
 export LLM_MODEL="deepseek-chat"
 
-# 4. 运行（修改 demo.py 加上 llm 参数）
+# 2. 运行（自动蒸馏+筛选+聊天）
+python examples/demo.py
 ```
 
-### 用代码
+## 使用示例
+
+### 方式一：从聊天记录蒸馏
 
 ```python
-from dating_agent import DatingAgent, PersonalityProfile, LLMClient, LLMConfig
+from dating_agent import DatingAgent
 
-# 你的性格档案
+# 你的聊天记录（从交友平台导出）
+chat_logs = [
+    {"role": "me", "content": "哈哈哈哈你也喜欢这个啊"},
+    {"role": "them", "content": "对啊，我也觉得超有意思的"},
+    {"role": "me", "content": "那你平时还喜欢干嘛"},
+    {"role": "them", "content": "看书旅行，你呢"},
+    {"role": "me", "content": "我啊，看书发呆撸猫，三件套"},
+]
+
+basic_info = {"name": "你的名", "gender": "女", "age": 27}
+
+# 一键创建Agent（自动蒸馏）
+agent = DatingAgent.from_chat_logs(chat_logs, basic_info)
+
+# 喂profile列表，自动筛选
+agent.swipe(sample_profiles)
+
+# 聊完推荐见面
+agent.chat_with_matches(rounds=5)
+
+# 出报告
+agent.report()
+```
+
+### 方式二：手动填性格档案
+
+```python
+from dating_agent import DatingAgent, PersonalityProfile
+
+# 手动填性格档案
 profile = PersonalityProfile(
     name="你的名字",
     gender="女",
@@ -68,38 +107,9 @@ profile = PersonalityProfile(
     dislikes=["大男子主义", "情绪不稳定"],
 )
 
-# 接 LLM（不传 llm 就是仿真模式）
-llm = LLMClient(LLMConfig.from_env())
-agent = DatingAgent(profile, llm=llm)
-
-# 筛选
+# 创建Agent（无API = 规则模式筛选）
+agent = DatingAgent(profile)
 agent.swipe(profiles)
-
-# 聊天
-agent.chat_with_matches(rounds=5)
-
-# 出报告
-agent.report()
-```
-
-### 蒸馏自己（从聊天记录提取风格）
-
-```python
-from dating_agent import Distiller, LLMClient, LLMConfig
-
-llm = LLMClient(LLMConfig.from_env())
-distiller = Distiller(llm)
-
-# 你的聊天记录
-chat_logs = [
-    {"role": "me", "content": "哈哈你说的那个我也觉得"},
-    {"role": "them", "content": "真的吗？那你平时喜欢干嘛"},
-    {"role": "me", "content": "看书发呆撸猫，三件套"},
-    # ... 更多记录
-]
-
-profile = distiller.distill(chat_logs, {"name": "你", "gender": "女", "age": 27})
-print(profile.chat_style)  # AI提取出的你的说话风格
 ```
 
 ## 项目结构
@@ -108,14 +118,14 @@ print(profile.chat_style)  # AI提取出的你的说话风格
 dating-agent/
 ├── dating_agent/
 │   ├── __init__.py        # 包入口
-│   ├── profile.py         # 性格档案
+│   ├── profile.py         # 性格档案（长期记忆）
 │   ├── llm_client.py      # LLM客户端（OpenAI兼容）
 │   ├── filter_engine.py   # 筛选引擎（规则+LLM双模式）
-│   ├── chat_engine.py     # 聊天引擎（仿真+LLM双模式）
-│   ├── distill.py         # 蒸馏自己（从聊天记录提取风格）
+│   ├── chat_engine.py     # 聊天引擎（Agent循环）
+│   ├── distill.py         # 蒸馏自己（聊天记录→性格档案）
 │   └── agent.py           # 主控Agent
 ├── examples/
-│   └── demo.py            # 示例
+│   └── demo.py            # 示例（仿真+LLM两种模式）
 ├── config.example.yaml    # 配置模板
 ├── requirements.txt
 └── README.md
@@ -134,7 +144,18 @@ dating-agent/
 
 推荐用 DeepSeek，便宜好用。
 
-## ⚠️ 伦理声明
+## 注意事项
+
+### 仿真模式 vs LLM模式
+
+| 功能 | 仿真模式 | LLM模式 |
+|------|---------|---------|
+| 性格档案 | 手动填 | 蒸馏生成 |
+| 筛选 | ✅ 规则匹配 | ✅ LLM语义判断 |
+| 聊天 | ❌ 报错提示 | ✅ 自然对话 |
+| 评估 | ❌ 不支持 | ✅ LLM打分 |
+
+### 伦理声明
 
 这个项目的定位是 **AI 辅助初筛**，不是 AI 替你谈恋爱。
 
