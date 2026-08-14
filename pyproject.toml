@@ -1,10 +1,10 @@
 [build-system]
 requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "dating-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI辅助相亲筛选Agent - 用LLM帮你初筛、聊天、评估匹配度"
 readme = "README.md"
 license = {text = "MIT"}
@@ -32,6 +32,19 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
 ]
+gui = [
+    "gradio>=4.0",
+    "pywebview>=5.0",
+    "screeninfo>=0.8",
+]
+desktop = [
+    "gradio>=4.0",
+    "pywebview>=5.0",
+    "screeninfo>=0.8",
+]
+
+[project.scripts]
+dating-agent = "dating_agent.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/charlotty2026/dating-agent"
