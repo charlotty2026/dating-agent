@@ -135,6 +135,10 @@ def batch_swipe(profiles_json):
 
     agent = DatingAgent(_state["profile"], _state["llm"])
     matches = agent.swipe(profiles, verbose=False)
+    # P1修复: 给每个match写入id字段，供聊天Tab使用
+    for i, m in enumerate(matches):
+        if "id" not in m:
+            m["id"] = str(i + 1)
     _state["agent"] = agent
     _state["matches"] = matches
 
@@ -209,12 +213,30 @@ def evaluate_chat():
     verdict = ""
     if result.get("should_meet"):
         verdict = "⭐ 推荐见面!"
+        # P1修复: 评估结果同步到_state
+        match = _get_current_match()
+        if match:
+            match["eval_score"] = result["score"]
+            match["eval_reason"] = result["reason"]
+            if match not in _state["shortlisted"]:
+                _state["shortlisted"].append(match)
     elif result.get("should_drop"):
         verdict = "💤 建议放弃"
     else:
         verdict = "🤔 可以再聊聊"
 
     return f"{verdict} (评分: {result['score']}/100)\n{result['reason']}"
+
+
+def _get_current_match():
+    """获取当前聊天的match对象"""
+    match_id = _state.get("current_match_id")
+    if not match_id:
+        return None
+    for m in _state.get("matches", []):
+        if str(m.get("id", m.get("name", ""))) == match_id:
+            return m
+    return None
 
 
 def _format_chat(match_id):
@@ -235,8 +257,9 @@ def generate_report():
         return "❌ 没有运行记录，请先筛选和聊天"
 
     agent = _state["agent"]
-    # 如果有聊天历史，同步到agent
+    # P1修复: 同步聊天评估结果到agent
     agent.shortlisted = _state.get("shortlisted", [])
+    agent.matches = _state.get("matches", [])
     report = agent.report()
     return json.dumps(report, ensure_ascii=False, indent=2)
 
