@@ -42,7 +42,13 @@ class ProfilePersistence:
             "chat_style": profile.chat_style,
             "dealbreakers": profile.dealbreakers,
             "bonus_traits": profile.bonus_traits,
-            "created_at": int(time.time()),
+            # v0.3 新字段：单调时钟纳秒保证排序稳定（Windows 系统时钟粒度约15.6ms，time.time_ns 会撞值）
+            "created_at": time.perf_counter_ns(),
+            "chat_style_fingerprint": profile.chat_style_fingerprint,
+            "values_radar": profile.values_radar,
+            "redline_patterns": profile.redline_patterns,
+            "evidence": profile.evidence,
+            "distill_meta": profile.distill_meta,
         }
 
         with open(filepath, "w", encoding="utf-8") as f:
@@ -78,6 +84,19 @@ class ProfilePersistence:
             chat_style=data.get("chat_style", ""),
             dealbreakers=data.get("dealbreakers", []),
             bonus_traits=data.get("bonus_traits", []),
+            # v0.3 新字段（兼容旧档案：缺失时用默认值）
+            chat_style_fingerprint=data.get("chat_style_fingerprint", {}) or {},
+            values_radar=data.get("values_radar", {}) or {},
+            redline_patterns=data.get("redline_patterns", []) or [],
+            evidence=data.get("evidence", []) or [],
+            distill_meta=data.get("distill_meta", {
+                "version": "v0.3",
+                "source_count": 0,
+                "created_at": "",
+                "updated_at": "",
+                "corrections_count": 0,
+                "corrections": [],
+            }),
         )
 
     def list_profiles(self) -> list:

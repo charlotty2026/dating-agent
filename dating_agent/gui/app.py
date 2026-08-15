@@ -45,9 +45,9 @@ def _get_llm(api_key, base_url, model):
 def save_profile(name, gender, age, personality_tags, likes, dislikes, chat_style,
                  api_key, base_url, model):
     """保存手动填写的档案 + 初始化LLM"""
-    tags = [t.strip() for t in personality_tags.split(",") if t.strip()]
-    like_list = [l.strip() for l in likes.split(",") if l.strip()]
-    dislike_list = [d.strip() for d in dislikes.split(",") if d.strip()]
+    tags = [t.strip() for t in personality_tags.replace("，", ",").split(",") if t.strip()]
+    like_list = [l.strip() for l in likes.replace("，", ",").split(",") if l.strip()]
+    dislike_list = [d.strip() for d in dislikes.replace("，", ",").split(",") if d.strip()]
 
     profile = PersonalityProfile(
         name=name or "匿名用户",
@@ -75,15 +75,12 @@ def distill_profile(chat_logs_text, name, gender, age, api_key, base_url, model)
         return "❌ 蒸馏需要LLM API Key，请先填写"
 
     try:
-        lines = chat_logs_text.strip().split("\n")
-        chat_logs = []
-        for line in lines:
-            if ":" in line:
-                role, content = line.split(":", 1)
-                role = "me" if role.strip().lower() in ("我", "me", "i") else "them"
-                chat_logs.append({"role": role, "content": content.strip()})
+        # v0.3：使用智能解析器（支持 我/你/对方/ta/时间戳 等角色标记）
+        chat_logs = Distiller.parse_chat_logs(chat_logs_text)
+        if not chat_logs:
+            return "❌ 聊天记录格式错误，每行格式: 我:xxx 或 对方:xxx"
     except Exception:
-        return "❌ 聊天记录格式错误，每行格式: 我:xxx 或 对方:xxx"
+        return "❌ 聊天记录解析失败"
 
     if len(chat_logs) < 5:
         return "❌ 聊天记录太少，至少需要5条"
@@ -114,7 +111,7 @@ def evaluate_one(bio, interests, photo_desc):
     if not _state["profile"]:
         return "❌ 请先在Tab 1保存档案"
 
-    interest_list = [i.strip() for i in interests.split(",") if i.strip()]
+    interest_list = [i.strip() for i in interests.replace("，", ",").split(",") if i.strip()]
     engine = FilterEngine(_state["profile"], _state["llm"])
     result = engine.evaluate(bio or "", interest_list, photo_desc or "")
 
@@ -289,9 +286,9 @@ def create_app():
                 gender_input = gr.Textbox(label="性别", value="")
                 age_input = gr.Number(label="年龄", value=0)
             with gr.Row():
-                tags_input = gr.Textbox(label="性格标签(逗号分隔)", placeholder="内向,爱看书,幽默")
-                likes_input = gr.Textbox(label="喜欢什么特质(逗号分隔)", placeholder="有责任心,爱运动")
-                dislikes_input = gr.Textbox(label="讨厌什么特质(逗号分隔)", placeholder="抽烟,酗酒")
+                tags_input = gr.Textbox(label="性格标签(逗号分隔)", placeholder="内向，爱看书，幽默")
+                likes_input = gr.Textbox(label="喜欢什么特质(逗号分隔)", placeholder="有责任心，爱运动")
+                dislikes_input = gr.Textbox(label="讨厌什么特质(逗号分隔)", placeholder="抽烟，酗酒")
             chat_style_input = gr.Textbox(label="聊天风格描述", placeholder="直接、不绕弯、偶尔幽默",
                                           lines=2)
 
@@ -333,7 +330,7 @@ def create_app():
             gr.Markdown("### 评估单个Profile")
             with gr.Row():
                 bio_input = gr.Textbox(label="对方Bio", lines=3, placeholder="对方自我介绍...")
-                interests_input = gr.Textbox(label="对方兴趣(逗号分隔)", placeholder="电影,旅行,美食")
+                interests_input = gr.Textbox(label="对方兴趣(逗号分隔)", placeholder="电影，旅行，美食")
             photo_desc_input = gr.Textbox(label="照片描述(可选)", placeholder="穿白T恤，笑容阳光")
 
             eval_btn = gr.Button("🔍 评估", variant="primary")
