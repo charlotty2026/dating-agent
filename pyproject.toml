@@ -47,8 +47,8 @@ desktop = [
 dating-agent = "dating_agent.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/charlotty2026/dating-agent"
-Repository = "https://github.com/charlotty2026/dating-agent"
+Homepage = "https://gitee.com/fenglinhuoshanmen/dating-agent"
+Repository = "https://gitee.com/fenglinhuoshanmen/dating-agent"
 Issues = "https://github.com/charlotty2026/dating-agent/issues"
 
 [tool.setuptools.packages.find]

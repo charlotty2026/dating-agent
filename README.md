@@ -33,7 +33,10 @@
 ### 安装
 
 ```bash
-git clone https://github.com/charlotty2026/dating-agent.git
+# 国内推荐（Gitee）
+git clone https://gitee.com/fenglinhuoshanmen/dating-agent.git
+# 或 GitHub 镜像
+# git clone https://github.com/charlotty2026/dating-agent.git
 cd dating-agent
 pip install -r requirements.txt
 ```
